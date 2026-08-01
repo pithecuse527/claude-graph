@@ -8,11 +8,13 @@ import {
   listProjects,
   setClaudeHome,
   keepSet,
+  type Detail,
   type Graph,
   type Node,
   type ProjectDir,
 } from './parse.ts';
 import { layout } from './layout.ts';
+import { windowStart } from './render.ts';
 import { page, type Block, type SessionChoice } from './webview.ts';
 
 function workspaceDir(): string | undefined {
@@ -29,8 +31,8 @@ function roots(g: Graph): Node[] {
  * relation between two ticked sessions still shows, because the unticked turns
  * between them collapse into the connector rather than being cut.
  */
-function keepFor(g: Graph, selected: Set<string>): Set<string> {
-  const keep = keepSet(g, 'user');
+function keepFor(g: Graph, selected: Set<string>, detail: Detail): Set<string> {
+  const keep = keepSet(g, detail);
   if (!selected.size) return keep;
   for (const id of [...keep]) if (!selected.has(g.nodes.get(id)!.session)) keep.delete(id);
   return keep;
@@ -58,10 +60,14 @@ class State {
   private watcher?: vscode.FileSystemWatcher;
   private pending?: ReturnType<typeof setTimeout>;
 
+  settings() {
+    return vscode.workspace.getConfiguration('claudeSessionGraph');
+  }
+
   /** Reload when the folder's transcripts change; a live session appends often. */
   private watch() {
     this.watcher?.dispose();
-    if (!this.dir) return;
+    if (!this.dir || !this.settings().get<boolean>('autoRefresh', true)) return;
     this.watcher = vscode.workspace.createFileSystemWatcher(
       new vscode.RelativePattern(vscode.Uri.file(this.dir), '*.jsonl'),
     );
@@ -80,7 +86,8 @@ class State {
   }
 
   reload() {
-    const home = vscode.workspace.getConfiguration('claudeSessionGraph').get<string>('claudeHome');
+    const cfg = vscode.workspace.getConfiguration('claudeSessionGraph');
+    const home = cfg.get<string>('claudeHome');
     if (typeof home === 'string' && home.trim()) setClaudeHome(home.trim());
     this.folders = listProjects();
     const cwd = workspaceDir();
@@ -187,15 +194,18 @@ class GraphView implements vscode.WebviewViewProvider {
       this.view.webview.html = body('no Claude Code sessions recorded for this folder');
       return;
     }
-    const keep = keepFor(g, this.state.selected);
+    const cfg = this.state.settings();
+    const keep = keepFor(g, this.state.selected, cfg.get<Detail>('detail', 'user'));
+    const abandoned = cfg.get<boolean>('showAbandoned', false);
+    const limit = cfg.get<number>('limit', 0);
     // No window: the sidebar scrolls, and truncating hides the branch points
     // the view exists to show. `--limit` stays a CLI concern.
-    const blocks: Block[] = displayRoots(g, keep).map((id) => ({
-      laid: layout(g, keep, id),
-      cut: 0,
-      rootSession: g.nodes.get(id)!.session,
-    }));
-    this.view.webview.html = page(g, blocks, this.view.webview.cspSource);
+    const blocks: Block[] = displayRoots(g, keep).map((id) => {
+      const laid = layout(g, keep, id, abandoned);
+      const session = g.nodes.get(id)!.session;
+      return { laid, cut: limit > 0 ? windowStart(g, laid, session, limit) : 0, rootSession: session };
+    });
+    this.view.webview.html = page(g, blocks, cfg.get<boolean>('collapseStraightSessions', true), this.view.webview.cspSource);
   }
 
   private async diff(id: string) {
@@ -245,12 +255,15 @@ export function activate(context: vscode.ExtensionContext) {
     }),
     vscode.commands.registerCommand('csg.pickFolder', (dir: string) => state.setDir(dir)),
     vscode.commands.registerCommand('csg.refresh', () => state.reload()),
+    vscode.commands.registerCommand('csg.openSettings', () =>
+      vscode.commands.executeCommand('workbench.action.openSettings', 'claudeSessionGraph'),
+    ),
     vscode.commands.registerCommand('csg.clearSelection', () => {
       state.selected.clear();
       state.reload();
     }),
     vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('claudeSessionGraph.claudeHome')) state.reload();
+      if (e.affectsConfiguration('claudeSessionGraph')) state.reload();
     }),
   );
   state.reload();

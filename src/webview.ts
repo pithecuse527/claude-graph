@@ -28,7 +28,7 @@ export interface Block {
   rootSession: string;
 }
 
-export function page(g: Graph, blocks: Block[], csp: string): string {
+export function page(g: Graph, blocks: Block[], collapseStraight: boolean, csp: string): string {
   // One colour per session, shared across every tree in the folder.
   const sessions = [...g.sessionStart.keys()].sort((a, b) =>
     (g.sessionStart.get(a) ?? '').localeCompare(g.sessionStart.get(b) ?? ''),
@@ -36,7 +36,7 @@ export function page(g: Graph, blocks: Block[], csp: string): string {
   const sessionIndex = new Map(sessions.map((s, i) => [s, i]));
   const hue = (session: string) => COLORS[(sessionIndex.get(session) ?? 0) % COLORS.length];
 
-  const trees = blocks.map((b) => tree(g, b, hue)).join('');
+  const trees = blocks.map((b) => tree(g, b, hue, collapseStraight)).join('');
   const turns = blocks.reduce((n, b) => n + b.laid.rows.filter((r) => r.kind === 'node').length, 0);
   // Inline scripts need a nonce: the webview CSP allows extension resources
   // only, so without one every click handler is silently dropped.
@@ -88,7 +88,7 @@ ${trees || '<div class="meta">nothing selected</div>'}
 }
 
 /** One tree: its own SVG lane strip plus the rows beside it. */
-function tree(g: Graph, block: Block, hue: (s: string) => string): string {
+function tree(g: Graph, block: Block, hue: (s: string) => string, collapseStraight: boolean): string {
   const { laid, cut, rootSession } = block;
   // Fan rows only exist to draw connectors in a character grid; SVG replaces them.
   const shown = laid.rows.map((r, i) => ({ r, i })).filter(({ r, i }) => r.kind === 'node' && i >= cut);
@@ -173,7 +173,7 @@ function tree(g: Graph, block: Block, hue: (s: string) => string): string {
   // Only trees that actually branched open on their own; a folder can hold
   // twenty straight-line sessions and stacking them all is unreadable.
   return (
-    `<details class="tree" style="--graph:${graphW}px"${branched ? ' open' : ''}>` +
+    `<details class="tree" style="--graph:${graphW}px"${branched || !collapseStraight ? ' open' : ''}>` +
     cap +
     `<div style="position:relative">` +
     `<svg width="${graphW}" height="${height}">${paths}${dots}</svg>` +

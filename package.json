@@ -73,6 +73,11 @@
       {
         "command": "csg.pickFolder",
         "title": "Claude Session Graph: Select Folder"
+      },
+      {
+        "command": "csg.openSettings",
+        "title": "Claude Session Graph: Settings",
+        "icon": "$(gear)"
       }
     ],
     "menus": {
@@ -86,6 +91,11 @@
           "command": "csg.clearSelection",
           "when": "view == csg.sessions",
           "group": "navigation@1"
+        },
+        {
+          "command": "csg.openSettings",
+          "when": "view == csg.folders || view == csg.sessions || view == csg.graph",
+          "group": "navigation@3"
         }
       ]
     },
@@ -95,7 +105,49 @@
         "claudeSessionGraph.claudeHome": {
           "type": "string",
           "default": "~/.claude",
-          "description": "Directory Claude Code stores its state in: projects/<slug>/*.jsonl transcripts and file-history/ checkpoint backups. Override if CLAUDE_CONFIG_DIR moves it."
+          "order": 1,
+          "markdownDescription": "Directory Claude Code stores its state in: `projects/<slug>/*.jsonl` transcripts and `file-history/` checkpoint backups. Override if `CLAUDE_CONFIG_DIR` moves it."
+        },
+        "claudeSessionGraph.detail": {
+          "type": "string",
+          "enum": [
+            "user",
+            "all",
+            "topology"
+          ],
+          "default": "user",
+          "order": 2,
+          "enumDescriptions": [
+            "One row per user turn, plus the Claude turns that carry structure.",
+            "Every message, Claude's tool calls included.",
+            "Branch points and checkpoints only."
+          ],
+          "description": "How much of each conversation to draw."
+        },
+        "claudeSessionGraph.showAbandoned": {
+          "type": "boolean",
+          "default": false,
+          "order": 3,
+          "description": "Draw rewinds that were dropped after a single turn. They own no lane; they hang off the turn they split from."
+        },
+        "claudeSessionGraph.collapseStraightSessions": {
+          "type": "boolean",
+          "default": true,
+          "order": 4,
+          "description": "Start sessions that never branched collapsed, so the ones that did stand out."
+        },
+        "claudeSessionGraph.limit": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "order": 5,
+          "description": "Show only the last N turns of each session's main line. 0 draws everything."
+        },
+        "claudeSessionGraph.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "order": 6,
+          "description": "Redraw when a transcript in the selected folder changes."
         }
       }
     }
