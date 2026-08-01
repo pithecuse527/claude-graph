@@ -9,14 +9,31 @@ pointing back at an older turn, so the file is a *tree*, not a log. This reads
 that tree and draws it, as a VS Code sidebar and as a terminal graph.
 
 ```
-●           66baebba 2607312156 you are the expert on @mil…
-●           5116b067 2607312158 claude
+$ csg main0000
+
+11 of 11 turns · 2 sessions · 2 lanes
+● main0000  2026-05-04 09:01  lane 0,1
+● brnch000  2026-05-04 09:26  lane 1
+
+●   u1 2605040901 the /pricing endpoint takes 900ms, can we cac…
+●   a1 2605040902 claude
 ├┈┐
-● │         3de6b16f 2607312201 for distance to work, dim …
-├─┼───┐
-  │   ●     56555510 2607312243 ok, keep answers short     branch 9fc42d77 from 071f9737
-  ○   │     27a72cad 2607312244 ok, short answers please   retry from 5116b067
+│ ○   u2 2605040904 just memoize it                        retry from a1
+│ ●   a5 2605040904 claude
+◆   u3 2605040905 add an in-process cache with a 60s TTL [1f]
+◆   u4 2605040920 what happens when a tier changes mid-window [2f]
+●   a3 2605040921 claude
+├─┐
+│ ●   b1 2605040926 what would redis cost us here instead  branch brnch000 from a3
+│ ●   b3 2605040929 we are single-pod, drop it
+◆   u5 2605040932 do that, and add a test for the invalidation [3f]
+●   a4 2605040934 claude
 ```
+
+Read that as: the prompt at 09:04 was rewound and replaced by the one at 09:05,
+which is the line the work continued on; at 09:26 a separate session branched
+off the 09:21 turn to price out Redis; and three turns wrote files, the last of
+them touching three.
 
 ## What it shows
 
