@@ -1,6 +1,0 @@
-.gitignore
-.vscodeignore
-src/**/*.test.ts
-tsconfig.json
-node_modules/**
-media/*.png

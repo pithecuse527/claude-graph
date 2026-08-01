@@ -7,6 +7,7 @@ import {
   projectDir,
   listProjects,
   setClaudeHome,
+  resetClaudeHome,
   keepSet,
   type Detail,
   type Graph,
@@ -87,8 +88,11 @@ class State {
 
   reload() {
     const cfg = vscode.workspace.getConfiguration('claudeSessionGraph');
+    // Empty means "decide the way the CLI does": $CLAUDE_CONFIG_DIR, else
+    // ~/.claude. Only a non-empty setting overrides that.
     const home = cfg.get<string>('claudeHome');
     if (typeof home === 'string' && home.trim()) setClaudeHome(home.trim());
+    else resetClaudeHome();
     this.folders = listProjects();
     const cwd = workspaceDir();
     this.dir ??= cwd ? projectDir(cwd) : this.folders[0]?.dir;

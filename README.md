@@ -1,19 +1,31 @@
 # claude-graph
 
-A Git Graph style view of Claude Code's own history: where a conversation was
-rewound, where a branch session split off, and which turns wrote files.
+For people who ask Claude Code too many questions.
 
-Claude Code stores every session as an append-only JSONL transcript. Rewinding
-does not erase anything — the new message is appended with its `parentUuid`
-pointing back at an older turn, so the file is a *tree*, not a log. This reads
-that tree and draws it, as a VS Code sidebar and as a terminal graph.
+You know the pattern. You ask something, the answer is 80% right, you hit Esc,
+rewrite the prompt, ask again. Twenty minutes later you want the version from
+*before* the rewrite. Or you branched a session to try the other approach, got
+a better answer there, and now you cannot remember which of the four sessions
+in your sidebar was the good one.
+
+Claude Code kept all of it. Every rewind, every branch, every file it touched.
+It just never showed you.
+
+`claude-graph` draws that history the way Git Graph draws commits.
+
+![The sidebar: folders, sessions, and the graph](media/screenshot-vscode.png)
+
+Six sessions there, all of them branches of one question about Iceberg, drawn
+in one picture with the turn each split from.
+
+Same thing in a terminal, if that is where you live:
+
+![csg in a terminal](media/screenshot-cli.png)
+
+The demo below is a smaller, invented one, to walk through what the marks mean:
 
 ```
-$ csg main0000
-
-11 of 11 turns · 2 sessions · 2 lanes
-● main0000  2026-05-04 09:01  lane 0,1
-● brnch000  2026-05-04 09:26  lane 1
+11 of 11 turns · 2 sessions
 
 ●   u1 2605040901 the /pricing endpoint takes 900ms, can we cac…
 ●   a1 2605040902 claude
@@ -30,97 +42,93 @@ $ csg main0000
 ●   a4 2605040934 claude
 ```
 
-Read that as: the prompt at 09:04 was rewound and replaced by the one at 09:05,
-which is the line the work continued on; at 09:26 a separate session branched
-off the 09:21 turn to price out Redis; and three turns wrote files, the last of
-them touching three.
+At 09:04 you asked for memoization, thought better of it, rewound, and asked
+for a TTL cache instead. That is the dotted lane. At 09:26 you split off a
+whole session to price out Redis, decided against it, and it died two turns
+later. That is the solid one. The diamonds are turns that wrote files, and the
+last one wrote three.
 
-## What it shows
+## Reading it
 
-| Mark | Meaning |
+| Mark | Means |
 | --- | --- |
 | `●` | a turn |
-| `○` / dashed line | **retry** — rewound to an earlier turn and sent again, in the same session |
-| `⑂` / solid line | **branch** — a new session started from that point (`forkedFrom`) |
-| `◆` | a **checkpoint**: files backed up at that turn, diffable against their state now |
+| `○` + dotted lane | **retry** — you rewound and asked again, same session |
+| `⑂` + solid lane | **branch** — a whole new session split off here |
+| `◆` | files were written; click it in VS Code to diff that snapshot against now |
 
-Colour follows the session, not the column, so a lane can be recycled without
-losing the thread.
+One colour per session. Straight down a lane means the conversation just kept
+going; anything sideways is a point where you changed your mind.
 
-## VS Code extension
-
-Three sidebar sections: **Folders** (every project Claude Code has sessions
-for), **Sessions** (tick to narrow the graph), **Graph**.
-
-```bash
-npm install
-npm run compile
-code --extensionDevelopmentPath="$PWD" /path/to/your/project
-```
-
-Package it instead:
+## Install
 
 ```bash
 npx @vscode/vsce package
 code --install-extension claude-graph-*.vsix
 ```
 
-Setting `claudeSessionGraph.claudeHome` points at Claude Code's state directory
-(default `~/.claude`, or `$CLAUDE_CONFIG_DIR`).
+Then open the Claude Sessions icon in the activity bar. Three sections:
 
-## CLI
+- **Folders** — every project Claude Code has ever run in. Pick one.
+- **Sessions** — click one to jump to it, or tick several to compare.
+- **Graph** — the picture. Sessions that never branched start collapsed.
 
-Needs Node 22.6+ (runs the TypeScript directly, no build step).
+Nothing to configure to get going: it finds your sessions on its own.
+
+## Settings
+
+Under `claudeSessionGraph` in VS Code settings, or the gear icon on any of the
+three sections.
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `claudeHome` | `~/.claude` | Where Claude Code keeps its state. Change it if `CLAUDE_CONFIG_DIR` moved it. |
+| `detail` | `user` | `user` = your prompts. `all` = every tool call too. `topology` = branch points only. |
+| `showAbandoned` | off | Show rewinds you dropped after a single turn. |
+| `collapseStraightSessions` | on | Sessions that never branched start collapsed. |
+| `limit` | `0` | Draw only the last N turns per session. `0` draws everything. |
+| `autoRefresh` | on | Redraw while a session is still running. |
+
+## Terminal
+
+Same graph, no VS Code. No clone, no build:
 
 ```bash
-node --experimental-strip-types src/cli.ts --list --dir ~/my/project
-node --experimental-strip-types src/cli.ts <session-id-prefix> --dir ~/my/project
+npm i -g github:pithecuse527/claude-graph
+```
+
+That puts `csg` — **c**laude **s**ession **g**raph — on your PATH. Nothing is
+published to the npm registry; npm just fetches the repo and compiles it for
+you. To try it once without installing anything:
+
+```bash
+npx github:pithecuse527/claude-graph --list
+```
+
+Run it from inside the project you were using Claude in — sessions are recorded
+per working directory, so that is all it needs to find them.
+
+```bash
+csg --list              # what sessions exist here
+csg a3f2                # draw one, by any prefix of its id
+csg "pricing endpoint"  # or by a phrase from a message
+
+csg a3f2 --dir <path>   # a project you are not currently in
 ```
 
 ```
---dir <path>   project working dir, or <claude home>/projects/<slug>. default: cwd
+--dir <path>   project working dir. default: cwd
 --home <path>  Claude Code state dir. default: $CLAUDE_CONFIG_DIR or ~/.claude
---list         list sessions in the project and exit
+--list         list sessions and exit
 --all          every message, Claude's tool calls included
 --topology     branch points and checkpoints only
---abandoned    also show rewinds that were dropped after a single turn
---limit <n>    show only the last N turns of the main session. default: 30
+--abandoned    also show rewinds dropped after one turn
+--limit <n>    last N turns only. default: 30
 --width <n>    message text width. default: 25
 --ascii        ASCII-only glyphs
---no-color     disable color
+--no-color     no colour
 ```
 
-## What the transcripts actually look like
-
-Findings that shaped the parser — all of them cost a bug first:
-
-- **Parallel tool calls share one `message.id`.** Keeping every record turns
-  each parallel call into a fake branch: 292 branch points instead of 21.
-- **Slash commands and skill loads are `user` records** anchored to a `system`
-  record rather than to the previous message, so they fan out exactly like a
-  rewind. They are filtered, and the turns below them are re-attached to the
-  turn that preceded the removed record — all of them to the *same* anchor, or
-  a real rewind's siblings would be strung into a chain.
-- **A branch session copies its parent's prefix verbatim, uuids included.**
-  Global uuid dedup turns a branch into the same fanout as a rewind, so no
-  special handling is needed — but the copy also carries the parent's
-  timestamps, so a session must be dated by the first turn it *owns*.
-- **Interrupting Claude does not create a branch.** 13 interrupts, 2 branches;
-  the rest continue in a straight line.
-- **Session titles live in `ai-title` / `custom-title` records**, keyed by
-  session id — not in the `summary` rows some transcripts lack entirely.
-- **Checkpoints** are `file-history-snapshot` records joined to a turn by
-  `messageId`; the backups sit in `<claude home>/file-history/<session>/`.
-  A tracked file can have a `null` backup name.
-
-## Layout
-
-`src/parse.ts` builds the forest, `src/layout.ts` assigns lanes and edges,
-`src/render.ts` turns those into character cells for the terminal, and
-`src/webview.ts` turns the same lanes into SVG for the sidebar.
-
-```bash
-npm test   # synthetic fixtures covering each of the findings above
-```
+Read-only, always. It never writes to your transcripts.
 
 MIT.

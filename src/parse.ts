@@ -56,6 +56,11 @@ export function setClaudeHome(path: string) {
   CLAUDE_HOME = path.replace(/^~(?=$|\/)/, homedir());
 }
 
+/** Back to $CLAUDE_CONFIG_DIR, or ~/.claude when that is unset. */
+export function resetClaudeHome() {
+  CLAUDE_HOME = process.env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude');
+}
+
 export function claudeHome(): string {
   return CLAUDE_HOME;
 }

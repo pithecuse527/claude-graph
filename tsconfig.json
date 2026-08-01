@@ -22,7 +22,6 @@
     "src/**/*.ts"
   ],
   "exclude": [
-    "src/parse.test.ts",
-    "src/cli.ts"
+    "src/parse.test.ts"
   ]
 }

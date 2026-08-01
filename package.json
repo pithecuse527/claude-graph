@@ -3,17 +3,18 @@
   "version": "0.1.0",
   "description": "Git Graph style view of Claude Code session history: rewinds, branch sessions, and file checkpoints.",
   "bin": {
-    "csg": "src/cli.ts"
+    "csg": "out/cli.js"
   },
   "scripts": {
     "start": "node --experimental-strip-types src/cli.ts",
     "test": "node --experimental-strip-types src/parse.test.ts",
     "compile": "tsc -p . && echo '{ \"type\": \"commonjs\" }' > out/package.json",
-    "vscode:prepublish": "tsc -p . && echo '{ \"type\": \"commonjs\" }' > out/package.json"
+    "vscode:prepublish": "tsc -p . && echo '{ \"type\": \"commonjs\" }' > out/package.json",
+    "prepare": "tsc -p . && echo '{ \"type\": \"commonjs\" }' > out/package.json"
   },
   "engines": {
     "vscode": "^1.90.0",
-    "node": ">=22.6"
+    "node": ">=18"
   },
   "license": "MIT",
   "devDependencies": {
@@ -104,9 +105,9 @@
       "properties": {
         "claudeSessionGraph.claudeHome": {
           "type": "string",
-          "default": "~/.claude",
+          "default": "",
           "order": 1,
-          "markdownDescription": "Directory Claude Code stores its state in: `projects/<slug>/*.jsonl` transcripts and `file-history/` checkpoint backups. Override if `CLAUDE_CONFIG_DIR` moves it."
+          "markdownDescription": "Directory Claude Code stores its state in. Leave empty to use `$CLAUDE_CONFIG_DIR`, or `~/.claude` when that is unset. Set a path here only to override both."
         },
         "claudeSessionGraph.detail": {
           "type": "string",
@@ -168,5 +169,11 @@
     "history",
     "rewind",
     "checkpoint"
+  ],
+  "files": [
+    "out/",
+    "media/icon.svg",
+    "README.md",
+    "LICENSE"
   ]
 }
