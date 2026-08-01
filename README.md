@@ -9,13 +9,13 @@ pointing back at an older turn, so the file is a *tree*, not a log. This reads
 that tree and draws it, as a VS Code sidebar and as a terminal graph.
 
 ```
-●           66baebba 2607312156 지금부터 넌 @milvus/ 전문가야…
+●           66baebba 2607312156 you are the expert on @mil…
 ●           5116b067 2607312158 claude
 ├┈┐
-● │         3de6b16f 2607312201 거리 계산하려면 차원 수(dim)와…
+● │         3de6b16f 2607312201 for distance to work, dim …
 ├─┼───┐
-  │   ●     56555510 2607312243 일단 오케이. 짧게 대답    branch 9fc42d77 from 071f9737
-  ○   │     27a72cad 2607312244 일단 오케이. 짧게 대답.   retry from 5116b067
+  │   ●     56555510 2607312243 ok, keep answers short     branch 9fc42d77 from 071f9737
+  ○   │     27a72cad 2607312244 ok, short answers please   retry from 5116b067
 ```
 
 ## What it shows
