@@ -5,7 +5,11 @@ For people who ask Claude Code too many questions.
 Every rewind, every branch, every file it touched — Claude Code kept all of it
 and never showed you. This draws it, the way Git Graph draws commits.
 
+**In VS Code**
+
 ![The sidebar: folders, sessions, and the graph](media/screenshot-vscode.png)
+
+**In a terminal**
 
 ![csg in a terminal](media/screenshot-cli.png)
 
