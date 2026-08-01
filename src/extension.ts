@@ -168,6 +168,9 @@ class SessionTree implements vscode.TreeDataProvider<SessionChoice> {
     item.checkboxState = this.state.selected.has(c.id)
       ? vscode.TreeItemCheckboxState.Checked
       : vscode.TreeItemCheckboxState.Unchecked;
+    // Clicking the row jumps straight to that one session; the checkboxes are
+    // for building a set out of several.
+    item.command = { command: 'csg.pickSession', title: 'Show session', arguments: [c.id] };
     return item;
   }
 }
@@ -205,7 +208,10 @@ class GraphView implements vscode.WebviewViewProvider {
       const session = g.nodes.get(id)!.session;
       return { laid, cut: limit > 0 ? windowStart(g, laid, session, limit) : 0, rootSession: session };
     });
-    this.view.webview.html = page(g, blocks, cfg.get<boolean>('collapseStraightSessions', true), this.view.webview.cspSource);
+        // A ticked session is what the user just asked to see, so its tree opens
+    // even when straight-line sessions are collapsed by default.
+    const collapse = cfg.get<boolean>('collapseStraightSessions', true) && this.state.selected.size === 0;
+    this.view.webview.html = page(g, blocks, collapse, this.view.webview.cspSource);
   }
 
   private async diff(id: string) {
@@ -254,6 +260,10 @@ export function activate(context: vscode.ExtensionContext) {
       state.reload();
     }),
     vscode.commands.registerCommand('csg.pickFolder', (dir: string) => state.setDir(dir)),
+    vscode.commands.registerCommand('csg.pickSession', (id: string) => {
+      state.selected = new Set([id]);
+      state.reload();
+    }),
     vscode.commands.registerCommand('csg.refresh', () => state.reload()),
     vscode.commands.registerCommand('csg.openSettings', () =>
       vscode.commands.executeCommand('workbench.action.openSettings', 'claudeSessionGraph'),
