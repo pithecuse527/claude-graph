@@ -1,0 +1,120 @@
+{
+  "name": "claude-graph",
+  "version": "0.1.0",
+  "description": "Git Graph style view of Claude Code session history: rewinds, branch sessions, and file checkpoints.",
+  "bin": {
+    "csg": "src/cli.ts"
+  },
+  "scripts": {
+    "start": "node --experimental-strip-types src/cli.ts",
+    "test": "node --experimental-strip-types src/parse.test.ts",
+    "compile": "tsc -p . && echo '{ \"type\": \"commonjs\" }' > out/package.json",
+    "vscode:prepublish": "tsc -p . && echo '{ \"type\": \"commonjs\" }' > out/package.json"
+  },
+  "engines": {
+    "vscode": "^1.90.0",
+    "node": ">=22.6"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "@types/vscode": "^1.125.0",
+    "typescript": "^7.0.2"
+  },
+  "displayName": "Claude Session Graph",
+  "publisher": "local",
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onView:csg.folders",
+    "onView:csg.sessions",
+    "onView:csg.graph"
+  ],
+  "categories": [
+    "Visualization"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "csg",
+          "title": "Claude Sessions",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "csg": [
+        {
+          "id": "csg.folders",
+          "name": "Folders"
+        },
+        {
+          "id": "csg.sessions",
+          "name": "Sessions"
+        },
+        {
+          "id": "csg.graph",
+          "name": "Graph",
+          "type": "webview"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "csg.refresh",
+        "title": "Claude Session Graph: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "csg.clearSelection",
+        "title": "Claude Session Graph: Show All Sessions",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "csg.pickFolder",
+        "title": "Claude Session Graph: Select Folder"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "csg.refresh",
+          "when": "view == csg.folders || view == csg.sessions || view == csg.graph",
+          "group": "navigation@2"
+        },
+        {
+          "command": "csg.clearSelection",
+          "when": "view == csg.sessions",
+          "group": "navigation@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Claude Session Graph",
+      "properties": {
+        "claudeSessionGraph.claudeHome": {
+          "type": "string",
+          "default": "~/.claude",
+          "description": "Directory Claude Code stores its state in: projects/<slug>/*.jsonl transcripts and file-history/ checkpoint backups. Override if CLAUDE_CONFIG_DIR moves it."
+        }
+      }
+    }
+  },
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pithecuse527/claude-graph.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pithecuse527/claude-graph/issues"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "graph",
+    "sessions",
+    "history",
+    "rewind",
+    "checkpoint"
+  ]
+}
